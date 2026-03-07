@@ -97,5 +97,6 @@ algosight/
 ## 👤 Author
 
 Made by [Jeet Makhija](https://www.linkedin.com/in/jeet-makhija)
+Vibe Coded 🎧
 
 If you found this useful, consider giving the repo a ⭐ — it helps a lot!
