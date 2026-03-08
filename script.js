@@ -1374,15 +1374,19 @@ function hideWelcome(cb){
     return;
   }
   welcomeScreen._wCb=cb;
-  welcomeScreen.classList.add('w-leaving');
-  welcomeScreen.addEventListener('transitionend',function onEnd(e){
-    if(e.target!==welcomeScreen) return;
-    welcomeScreen.removeEventListener('transitionend',onEnd);
-    welcomeScreen.classList.add('hidden');
-    welcomeScreen.classList.remove('w-leaving');
-    if(welcomeScreen._wCb) welcomeScreen._wCb();
-    welcomeScreen._wCb=null;
-  });
+  // Reveal main content immediately, then fade out welcome
+  if (cb) cb();
+  // Now fade out welcome screen visually
+  setTimeout(()=>{
+    welcomeScreen.classList.add('w-leaving');
+    welcomeScreen.addEventListener('transitionend',function onEnd(e){
+      if(e.target!==welcomeScreen) return;
+      welcomeScreen.removeEventListener('transitionend',onEnd);
+      welcomeScreen.classList.add('hidden');
+      welcomeScreen.classList.remove('w-leaving');
+      welcomeScreen._wCb=null;
+    });
+  }, 0);
 }
 function showVizArea(){
   hideWelcome(()=>{
@@ -1527,7 +1531,20 @@ pauseBtn.addEventListener('click',()=>{
 });
 
 resetBtn.addEventListener('click',()=>fullReset());
-shuffleBtn.addEventListener('click',()=>fullReset());
+shuffleBtn.addEventListener('click',()=>{
+  // Shuffle array in place, keep steps and state
+  if (SORT_ALGOS.has(algo)) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    renderBars(arr, {});
+    setStatus('Array shuffled');
+    steps = [];
+    stepIdx = 0;
+    updateStepInfo();
+  }
+});
 $('logoLink').addEventListener('click',()=>{if(vizArea&&!vizArea.classList.contains('hidden')) history.back();});
 
 const ro=new ResizeObserver(()=>{
@@ -3972,23 +3989,10 @@ function updateNarration(msg){
   if(!msg){el.textContent=''; whyEl.textContent=''; return;}
   cancelAnimationFrame(_narrateRAF);
   cancelAnimationFrame(_narrateRAF2);
-  // Type the main message
-  el.textContent='';
-  let i=0;
-  (function type(){
-    if(i<msg.length){el.textContent+=msg[i++]; _narrateRAF=requestAnimationFrame(type);}
-    else {
-      // Then type the explanation
-      const tip=getLearnTip(msg);
-      whyEl.textContent='';
-      if(tip){
-        let j=0;
-        (function typeWhy(){
-          if(j<tip.length){whyEl.textContent+=tip[j++]; _narrateRAF2=requestAnimationFrame(typeWhy);}
-        })();
-      }
-    }
-  })();
+  // Instantly show the main message and explanation
+  el.textContent = msg;
+  const tip = getLearnTip(msg);
+  whyEl.textContent = tip || '';
 }
 $('learnBtn').addEventListener('click', toggleNarrate);
 
@@ -3997,7 +4001,30 @@ $('learnBtn').addEventListener('click', toggleNarrate);
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown', function(e) {
   if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA') return;
-  if(welcomeScreen&&!welcomeScreen.classList.contains('hidden')) return;
+  // If welcome screen is visible, hide it and show main area on any shortcut key
+  if(welcomeScreen && !welcomeScreen.classList.contains('hidden')) {
+    // Only respond to relevant shortcut keys
+    const shortcutKeys = ['Space','ArrowRight','ArrowLeft','KeyR','KeyS','KeyF','KeyL','Digit1','Digit2','Digit3','Digit4','Digit5'];
+    if(shortcutKeys.includes(e.code)) {
+      // Show main area and initialize if needed
+      history.pushState({page:'app'},'','#app');
+      sortSelect.value='bubble';
+      hideWelcome(()=>{
+        vizArea.classList.remove('hidden');
+        pathfindArea.classList.add('hidden');
+        $('logoLink').style.cursor='pointer';
+        requestAnimationFrame(()=>handleAlgoChange('bubble'));
+      });
+      // For forward/backward step, trigger the step action immediately after hiding welcome
+      if(e.code === 'ArrowRight') {
+        setTimeout(()=>stepBtn.click(), 0);
+      } else if(e.code === 'ArrowLeft') {
+        setTimeout(()=>stepBackBtn.click(), 0);
+      }
+    } else {
+      return;
+    }
+  }
   switch(e.code){
     case 'Space':
       e.preventDefault();
