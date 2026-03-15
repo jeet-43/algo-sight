@@ -110,7 +110,12 @@ input, .apply-btn, .bin-cell, .bar, .algo-category,
   padding: 0;
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
 
 .hidden { display: none !important; }
 
@@ -146,8 +151,10 @@ body {
   padding: 0 32px;
 }
 
-/* Make the body-grid section fill remaining height */
+/* Let the body-grid wrap fill the full viewport width & remaining height */
 .wrap:has(> .body-grid) {
+  max-width: 100%;
+  padding: 0;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -169,7 +176,7 @@ body {
    ===================================================== */
 header {
   border-bottom: 1px solid var(--border);
-  padding: 18px 0 12px;
+  padding: 10px 0 8px;
   flex-shrink: 0;
   background: var(--surface);
   box-shadow: var(--shadow-sm);
@@ -187,7 +194,7 @@ header + div { flex-shrink: 0; }
 
 .logo {
   font-family: 'Instrument Serif', serif;
-  font-size: 1.65rem;
+  font-size: 1.4rem;
   letter-spacing: -.3px;
   color: var(--ink);
   line-height: 1;
@@ -308,7 +315,7 @@ header + div { flex-shrink: 0; }
 .algo-nav {
   display: flex;
   gap: 16px;
-  padding: 12px 0;
+  padding: 6px 0;
   align-items: center;
   flex-wrap: wrap;
   position: relative;
@@ -408,7 +415,7 @@ header + div { flex-shrink: 0; }
    ===================================================== */
 .sidebar {
   border-right: 1px solid var(--border);
-  padding: 24px 24px 24px 0;
+  padding: 16px 24px 16px 32px;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -437,7 +444,7 @@ header + div { flex-shrink: 0; }
 
 .algo-title {
   font-family: 'Instrument Serif', serif;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   color: var(--ink);
   letter-spacing: -.2px;
 }
@@ -514,7 +521,7 @@ header + div { flex-shrink: 0; }
 
 /* Controls */
 .ctrl-group {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -715,7 +722,7 @@ input::placeholder { color: var(--ink3); }
    8. MAIN PANEL & VISUALIZATION
    ===================================================== */
 .main-panel {
-  padding: 16px 0 16px 28px;
+  padding: 8px 16px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -727,10 +734,10 @@ input::placeholder { color: var(--ink3); }
 #pathfindArea {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Status bar */
@@ -776,7 +783,7 @@ input::placeholder { color: var(--ink3); }
 /* Stats panel */
 .stats-panel {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -784,8 +791,8 @@ input::placeholder { color: var(--ink3); }
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -814,21 +821,30 @@ input::placeholder { color: var(--ink3); }
 /* Viz canvas */
 .viz-canvas {
   width: 100%;
-  flex: 1 1 200px;
-  min-height: 180px;
+  flex: 1;
+  min-height: 80px;
+  max-height: none;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  padding: 20px 16px 28px;
+  padding: 24px 16px 20px 16px;
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: auto;
   box-sizing: border-box;
   box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
 }
+.viz-canvas.resizing,
+.viz-canvas.custom-sized {
+  flex: none !important;
+}
+
+
 
 /* Fullscreen mode */
 .viz-canvas:fullscreen,
@@ -837,13 +853,17 @@ input::placeholder { color: var(--ink3); }
   padding: 40px;
   border: none;
   border-radius: 0;
-  height: 100vh;
-  width: 100vw;
-  flex: none;
-  min-height: unset;
-  display: flex;
+  height: 100% !important;
+  width: 100% !important;
+  flex: 1 !important;
+  min-height: unset !important;
+  display: flex !important;
   align-items: flex-end;
   justify-content: center;
+}
+.viz-canvas:not(:fullscreen) {
+  /* Ensure it returns to flex flow correctly if browser gets confused */
+  max-width: 100%;
 }
 .viz-canvas::backdrop { background: var(--bg); }
 
@@ -1035,6 +1055,36 @@ input::placeholder { color: var(--ink3); }
 
 
 /* =====================================================
+   12.1 VERTICAL RESIZER
+   ===================================================== */
+.v-resizer {
+  height: 8px;
+  margin: 2px 0;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.v-resizer:hover {
+  background: var(--accent-l);
+}
+.v-resizer-line {
+  width: 40px;
+  height: 3px;
+  background: var(--border2);
+  border-radius: 4px;
+  transition: width .3s, background .3s;
+}
+.v-resizer:hover .v-resizer-line {
+  width: 60px;
+  background: var(--accent);
+}
+
+/* =====================================================
    12. CODE PANEL
    ===================================================== */
 .code-panel {
@@ -1044,11 +1094,19 @@ input::placeholder { color: var(--ink3); }
   border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
-  max-height: 220px;
+  max-height: 100px; /* Default initial constraint */
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
 }
+.code-panel.resizing,
+.code-panel.custom-sized {
+  flex: none !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}
+
+
 
 .code-panel-header {
   display: flex;
@@ -1087,7 +1145,7 @@ input::placeholder { color: var(--ink3); }
 .lang-tab.active        { color: var(--accent); border-color: var(--accent); background: var(--accent-l); font-weight: 600; }
 
 .code-body {
-  padding: 10px 0;
+  padding: 4px 0;
   overflow-y: auto;
   overflow-x: auto;
   flex: 1;
@@ -1284,7 +1342,7 @@ input::placeholder { color: var(--ink3); }
 }
 .rec-tree-collapse:hover { color: var(--ink); background: var(--border); }
 
-.rec-tree-body           { overflow: auto; max-height: 220px; position: relative; }
+.rec-tree-body           { overflow: auto; max-height: 100px; position: relative; }
 .rec-tree-body.collapsed { display: none; }
 #recTreeCanvas           { display: block; width: 100%; min-height: 100px; }
 
@@ -1633,14 +1691,14 @@ input::placeholder { color: var(--ink3); }
   gap: 6px;
   flex-wrap: wrap;
   flex-shrink: 0;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .pf-tool.active { color: var(--accent); background: var(--accent-l); border-color: var(--accent); }
 
 .pf-grid-wrap {
   width: 100%;
-  flex: 1 1 200px;
-  min-height: 200px;
+  flex: 1;
+  min-height: 0;  /* CRITICAL: allow flex shrinking to fit viewport */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -1655,8 +1713,8 @@ input::placeholder { color: var(--ink3); }
 .pf-grid { display: grid; gap: 0; user-select: none; }
 
 .pf-cell {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -1687,7 +1745,7 @@ input::placeholder { color: var(--ink3); }
   letter-spacing: .2px;
   color: var(--ink2);
   text-transform: uppercase;
-  margin: 6px 0;
+  margin: 4px 0;
 }
 .pf-legend-item { display: flex; align-items: center; gap: 5px; }
 
