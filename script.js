@@ -4079,6 +4079,15 @@ function toggleFullscreen() {
 $('fullscreenBtn').addEventListener('click', toggleFullscreen);
 
 document.addEventListener('fullscreenchange', function() {
+  const canvas = $('vizCanvas');
+  if (!document.fullscreenElement) {
+    // Exited fullscreen - ensure no stuck styles
+    if (!canvas.classList.contains('custom-sized')) {
+      canvas.style.height = '';
+    }
+    canvas.style.width = '';
+  }
+
   // Re-render after a short delay so the canvas has its final dimensions
   setTimeout(function() {
     if(!arr.length||vizArea.classList.contains('hidden')) return;
@@ -4086,7 +4095,7 @@ document.addEventListener('fullscreenchange', function() {
     if(lastStep) applyStep(lastStep);
     else if(GRID_ALGOS.has(algo)) renderGrid(arr,{});
     else renderBars(arr,{});
-  }, 100);
+  }, 150);
 });
 
 // ═══════════════════════════════════════════════
@@ -5529,9 +5538,83 @@ document.addEventListener('keydown',e=>{
 })();
 
 // ═══════════════════════════════════════════════
+//  VERTICAL RESIZER
+// ═══════════════════════════════════════════════
+function initVerticalResizer() {
+  const resizer = $('vResizer');
+  const vizCanvas = $('vizCanvas');
+  const codePanel = $('codePanel');
+  
+  if (!resizer || !vizCanvas || !codePanel) return;
+
+  let isResizing = false;
+  let startY, startVizHeight, startCodeHeight;
+
+  resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    startY = e.clientY;
+    startVizHeight = vizCanvas.offsetHeight;
+    startCodeHeight = codePanel.offsetHeight;
+
+    document.documentElement.style.cursor = 'ns-resize';
+    vizCanvas.classList.add('resizing');
+    codePanel.classList.add('resizing');
+    
+    // Create a temporary overlay to capture mouse move smoothly
+    let overlay = document.createElement('div');
+    overlay.id = 'resizeOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.cursor = 'ns-resize';
+    overlay.style.zIndex = '9999';
+    document.body.appendChild(overlay);
+
+    const onMouseMove = (e) => {
+      if (!isResizing) return;
+      const deltaY = e.clientY - startY;
+      
+      const newVizHeight = Math.max(80, startVizHeight + deltaY);
+      const newCodeHeight = Math.max(60, startCodeHeight - deltaY);
+      
+      vizCanvas.style.height = `${newVizHeight}px`;
+      codePanel.style.height = `${newCodeHeight}px`;
+    };
+
+    const onMouseUp = () => {
+      isResizing = false;
+      document.documentElement.style.cursor = '';
+      vizCanvas.classList.remove('resizing');
+      codePanel.classList.remove('resizing');
+      
+      // Permanently add custom-sized to override max-heights
+      vizCanvas.classList.add('custom-sized');
+      codePanel.classList.add('custom-sized');
+
+      if (overlay) overlay.remove();
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+
+      if (arr.length > 0) {
+        if (GRID_ALGOS.has(algo)) renderGrid(arr, {});
+        else renderBars(arr, {});
+      }
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    e.preventDefault();
+  });
+}
+
+
+// ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
 applyTheme(isDark);
 pfBuildGrid();
 fullReset();
+initVerticalResizer();
 history.replaceState({page:'welcome'},'','');
