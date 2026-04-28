@@ -1574,7 +1574,7 @@ $('presetWorst').addEventListener('click',()=>applyPreset('worst'));
 $('presetEqual').addEventListener('click',()=>applyPreset('equal'));
 
 // FIX 6: Use .theme-toggle-label class instead of span:last-child
-let isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
+let isDark = true;
 function applyTheme(dark) {
   isDark=dark;
   document.documentElement.setAttribute('data-theme',dark?'dark':'');
